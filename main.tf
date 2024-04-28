@@ -1,125 +1,56 @@
-### PROVIDER
-provider "google" {
-  project = var.project-id
-  region  = var.region
-  zone    = var.zone
+# AWS Provider Configuration
+provider "aws" {
+  region = var.aws_region
 }
 
-### NETWORK
-data "google_compute_network" "default" {
-  name                    = "default"
-}
-
-## SUBNET
-resource "google_compute_subnetwork" "subnet-1" {
-  name                     = var.subnet-name
-  ip_cidr_range            = var.subnet-cidr
-  network                  = data.google_compute_network.default.self_link
-  region                   = var.region
-  private_ip_google_access = var.private_google_access
-}
-
-resource "google_compute_firewall" "default" {
-  name    = "test-firewall"
-  network = data.google_compute_network.default.self_link
-
-  allow {
-    protocol = "icmp"
-  }
-
-  allow {
-    protocol = "tcp"
-    ports    = ["80", "8080", "1000-2000", "22"]
-  }
-
-  source_tags = ["web"]
-}
-
-### COMPUTE
-## NGINX PROXY
-resource "google_compute_instance" "nginx_instance" {
-  name         = "nginx-proxy"
-  machine_type = "f1-micro"
-  tags = ["web"]
-  
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
-
-  network_interface {
-    network = data.google_compute_network.default.self_link
-    subnetwork = google_compute_subnetwork.subnet-1.self_link
-    access_config {
-      
-    }
+# VPC
+resource "aws_vpc" "default" {
+  cidr_block = var.vpc_cidr
+  tags = {
+    Name = "default"
   }
 }
 
-## WEB1
-resource "google_compute_instance" "web1" {
-  name         = "web1"
-  machine_type = "f1-micro"
-  
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
-
-  network_interface {
-    # A default network is created for all GCP projects
-    network = data.google_compute_network.default.self_link
-    subnetwork = google_compute_subnetwork.subnet-1.self_link
+# Subnet
+resource "aws_subnet" "subnet_1" {
+  vpc_id     = aws_vpc.default.id
+  cidr_block = var.subnet_cidr
+  tags = {
+    Name = var.subnet_name
   }
 }
-## WEB2
-resource "google_compute_instance" "web2" {
-  name         = "web2"
-  machine_type = "f1-micro"
-  
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
 
-  network_interface {
-    network = data.google_compute_network.default.self_link
-    subnetwork = google_compute_subnetwork.subnet-1.self_link
-  }
-}
-## WEB3
-resource "google_compute_instance" "web3" {
-  name         = "web3"
-  machine_type = "f1-micro"
-  
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
-
-  network_interface {
-    network = data.google_compute_network.default.self_link
-    subnetwork = google_compute_subnetwork.subnet-1.self_link
-  }  
+# Internet Gateway
+resource "aws_internet_gateway" "default" {
+  vpc_id = aws_vpc.default.id
 }
 
-## DB
-resource "google_compute_instance" "mysqldb" {
-  name         = "mysqldb"
-  machine_type = "f1-micro"
-  
-  boot_disk {
-    initialize_params {
-      image = "debian-cloud/debian-11"
-    }
-  }
+# Route Table
+resource "aws_route_table" "default" {
+  vpc_id = aws_vpc.default.id
 
-  network_interface {
-    network = data.google_compute_network.default.self_link
-    subnetwork = google_compute_subnetwork.subnet-1.self_link
-  }  
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.default.id
+  }
+}
+
+# Associate the Route Table with the Subnet
+resource "aws_route_table_association" "a" {
+  subnet_id      = aws_subnet.subnet_1.id
+  route_table_id = aws_route_table.default.id
+}
+
+# Security Group to allow ICMP
+resource "aws_security_group" "default" {
+  name        = "test-firewall"
+  description = "Allow ICMP"
+  vpc_id      = aws_vpc.default.id
+
+  ingress {
+    from_port   = -1
+    to_port     = -1
+    protocol    = "icmp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }

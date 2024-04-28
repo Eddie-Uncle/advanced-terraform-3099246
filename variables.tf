@@ -1,29 +1,20 @@
-### VARIABLES
-variable "project-id" {
-  type = string
+# variables.tf
+variable "aws_region" {
+  type    = string
+  default = "us-east-1"
 }
 
-variable "region" {
-  type = string
-  default = "us-central1"
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
 }
 
-variable "zone" {
-  type = string
-  default = "us-central1-a"
+variable "subnet_cidr" {
+  type    = string
+  default = "10.0.1.0/24"
 }
 
-variable "subnet-name" {
-  type = string
+variable "subnet_name" {
+  type    = string
   default = "subnet1"
-}
-
-variable "subnet-cidr" {
-  type = string
-  default = "10.127.0.0/20"
-}
-
-variable "private_google_access" {
-  type = bool
-  default = true
 }
