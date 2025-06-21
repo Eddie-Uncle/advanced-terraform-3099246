@@ -8,6 +8,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           fetch-depth: 0
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
       - name: Copy To Branches Action
         uses: planetoftheweb/copy-to-branches@v1.2
         env:
