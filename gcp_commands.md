@@ -1,4 +1,4 @@
-#GCP Command Reference
+# GCP Command Reference
 =====================
 
 These gcloud commands are used throughout the course:
